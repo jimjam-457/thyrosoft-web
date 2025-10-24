@@ -13,7 +13,7 @@ import {
   Alert
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const LoginContainer = styled(Box)({
@@ -66,6 +66,8 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || '/add-new';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +81,7 @@ const Login: React.FC = () => {
     try {
       setIsLoading(true);
       await login(email, password);
-      // Navigation will happen in the login function
+      navigate(from, { replace: true });
     } catch (err) {
       setError('Failed to log in. Please check your credentials.');
       console.error('Login error:', err);

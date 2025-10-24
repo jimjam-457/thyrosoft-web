@@ -20,9 +20,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // For demo purposes, we'll just simulate a successful login
     await new Promise(resolve => setTimeout(resolve, 500));
     
+    // Only set the authentication state here
+    // Navigation will be handled by the Login component
     localStorage.setItem('isAuthenticated', 'true');
     setIsAuthenticated(true);
-    navigate('/dashboard');
   };
 
   const logout = () => {
