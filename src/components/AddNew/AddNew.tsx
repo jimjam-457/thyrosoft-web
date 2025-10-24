@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -34,8 +34,15 @@ import {
   Assessment as ReportsIcon,
   Person as UsersIcon,
   ExitToApp as LogoutIcon,
-  PersonAdd as AddPatientIcon
+  PersonAdd as AddPatientIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
+import PatientForm from '../PatientForm/PatientForm';
+import axios from 'axios';
+import { Alert, CircularProgress, Snackbar } from '@mui/material';
+
+type AlertColor = 'success' | 'info' | 'warning' | 'error';
 
 const drawerWidth = 180;
 
@@ -99,24 +106,74 @@ const menuItems = [
   { text: 'Logout', icon: <LogoutIcon />, id: 'logout' },
 ];
 
+// API base URL
+const API_URL = 'http://localhost:3771/api';
+
+// Axios instance with default config
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add a response interceptor to handle errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
+
+interface Doctor {
+  id: number;
+  name: string;
+  specialization: string;
+  clinicName: string;
+}
+
+interface Patient {
+  id?: number;
+  patient_id: string;
+  name: string;
+  age?: number;
+  gender?: string;
+  contact_number: string;
+  test_type: string;
+  email?: string;
+  address?: string;
+  barcode_number?: string;
+  doctor_referred?: string;
+  branch?: string;
+  price?: number;
+  date?: string;
+}
+
+interface SnackbarState {
+  open: boolean;
+  message: string;
+  severity: AlertColor;
+}
+
 const AddNew: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState('dashboard');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-
-  // Sample patient data
-  const patients = [
-    { id: 1, name: 'John Doe', age: 35, gender: 'Male', phone: '+1 234 567 890', email: 'john.doe@email.com' },
-    { id: 2, name: 'Jane Smith', age: 28, gender: 'Female', phone: '+1 234 567 891', email: 'jane.smith@email.com' },
-    { id: 3, name: 'Bob Johnson', age: 42, gender: 'Male', phone: '+1 234 567 892', email: 'bob.johnson@email.com' },
-    { id: 4, name: 'Alice Brown', age: 31, gender: 'Female', phone: '+1 234 567 893', email: 'alice.brown@email.com' },
-    { id: 5, name: 'Charlie Wilson', age: 39, gender: 'Male', phone: '+1 234 567 894', email: 'charlie.wilson@email.com' },
-    { id: 6, name: 'Diana Davis', age: 26, gender: 'Female', phone: '+1 234 567 895', email: 'diana.davis@email.com' },
-    { id: 7, name: 'Edward Miller', age: 45, gender: 'Male', phone: '+1 234 567 896', email: 'edward.miller@email.com' },
-  ];
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [currentPatient, setCurrentPatient] = useState<Patient | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [snackbar, setSnackbar] = useState<SnackbarState>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
   // Sample doctor data
-  const doctors = [
+  const doctors: Doctor[] = [
     { id: 1, name: 'Dr. Sarah Johnson', specialization: 'Cardiology', clinicName: 'City Heart Center' },
     { id: 2, name: 'Dr. Michael Chen', specialization: 'Neurology', clinicName: 'Brain & Spine Institute' },
     { id: 3, name: 'Dr. Emily Davis', specialization: 'Dermatology', clinicName: 'Skin Care Clinic' },
@@ -125,6 +182,29 @@ const AddNew: React.FC = () => {
     { id: 6, name: 'Dr. David Brown', specialization: 'Pediatrics', clinicName: 'Kids Care Clinic' },
     { id: 7, name: 'Dr. Jennifer Martinez', specialization: 'Ophthalmology', clinicName: 'Vision Care Center' },
   ];
+
+  // Fetch patients from API
+  const fetchPatients = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/patients');
+      setPatients(response.data as Patient[]);
+    } catch (err: any) {
+      console.error('Error fetching patients:', err);
+      setError('Failed to load patients. Please try again later.');
+      showSnackbar('Failed to load patients', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load patients when component mounts and when selectedItem changes to 'patients'
+  useEffect(() => {
+    if (selectedItem === 'patients') {
+      fetchPatients();
+    }
+  }, [selectedItem]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -142,6 +222,64 @@ const AddNew: React.FC = () => {
     } else {
       setSelectedItem(itemId);
     }
+  };
+
+  const handleOpenForm = (patient: Patient | null = null) => {
+    setCurrentPatient(patient);
+    setIsFormOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setCurrentPatient(null);
+  };
+
+  const handleSavePatient = async (patientData: any) => {
+    setIsSaving(true);
+    try {
+      if (currentPatient) {
+        // Update existing patient
+        await api.put(`/patients/${currentPatient.id}`, patientData);
+        showSnackbar('Patient updated successfully', 'success');
+      } else {
+        // Add new patient
+        await api.post('/patients', patientData);
+        showSnackbar('Patient added successfully', 'success');
+      }
+      fetchPatients(); // Refresh the list
+      handleCloseForm();
+    } catch (err: any) {
+      console.error('Error saving patient:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to save patient';
+      showSnackbar(errorMessage, 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeletePatient = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this patient?')) {
+      try {
+        await api.delete(`/patients/${id}`);
+        showSnackbar('Patient deleted successfully', 'success');
+        fetchPatients(); // Refresh the list
+      } catch (err) {
+        console.error('Error deleting patient:', err);
+        showSnackbar('Failed to delete patient', 'error');
+      }
+    }
+  };
+
+  const showSnackbar = (message: string, severity: AlertColor) => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
   };
 
   const renderContent = () => {
@@ -239,66 +377,147 @@ const AddNew: React.FC = () => {
                 color="primary"
                 startIcon={<AddPatientIcon />}
                 size="large"
+                onClick={() => handleOpenForm()}
               >
                 Add Patient
               </Button>
             </Box>
 
             <Box sx={{ flex: 1, p: 0, m: 0, overflow: 'auto' }}>
-              <TableContainer sx={{ height: '100%', width: '100%' }}>
-                <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'fixed' }} stickyHeader>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>ID</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '28%', fontSize: '0.875rem', py: 2, border: 'none' }}>Patient Name</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '8%', fontSize: '0.875rem', py: 2, border: 'none' }}>Age</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '10%', fontSize: '0.875rem', py: 2, border: 'none' }}>Gender</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Phone No</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '29%', fontSize: '0.875rem', py: 2, border: 'none' }}>Email</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {patients
-                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                      .map((patient) => (
-                        <TableRow
-                          key={patient.id}
-                          hover
-                          sx={{
-                            '&:hover': {
-                              backgroundColor: '#f5f5f5',
-                            },
-                            border: 'none'
-                          }}
-                        >
-                          <TableCell sx={{ width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.id}</TableCell>
-                          <TableCell sx={{ width: '28%', fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.name}</TableCell>
-                          <TableCell sx={{ width: '8%', fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.age}</TableCell>
-                          <TableCell sx={{ width: '10%', fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.gender}</TableCell>
-                          <TableCell sx={{ width: '20%', fontSize: '0.8rem', py: 2, border: 'none' }}>{patient.phone}</TableCell>
-                          <TableCell sx={{ width: '29%', fontSize: '0.8rem', py: 2, border: 'none' }}>{patient.email}</TableCell>
+              {loading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                  <CircularProgress />
+                </Box>
+              ) : error ? (
+                <Box p={3} textAlign="center">
+                  <Typography color="error">{error}</Typography>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={fetchPatients}
+                    sx={{ mt: 2 }}
+                  >
+                    Retry
+                  </Button>
+                </Box>
+              ) : (
+                <>
+                  <TableContainer sx={{ height: '100%', width: '100%' }}>
+                    <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'fixed' }} stickyHeader>
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>ID</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Patient Name</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '10%', fontSize: '0.875rem', py: 2, border: 'none' }}>Patient ID</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '8%', fontSize: '0.875rem', py: 2, border: 'none' }}>Age</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '10%', fontSize: '0.875rem', py: 2, border: 'none' }}>Gender</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '15%', fontSize: '0.8rem', py: 2, border: 'none' }}>Contact</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.8rem', py: 2, border: 'none' }}>Test Type</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '12%', fontSize: '0.875rem', py: 2, border: 'none' }}>Actions</TableCell>
                         </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                      </TableHead>
+                      <TableBody>
+                        {patients.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
+                              <Typography variant="body2" color="textSecondary">
+                                No patients found. Click 'Add Patient' to create a new record.
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          patients
+                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                            .map((patient) => (
+                              <TableRow
+                                key={patient.id}
+                                hover
+                                sx={{
+                                  '&:hover': {
+                                    backgroundColor: '#f5f5f5',
+                                  },
+                                  border: 'none'
+                                }}
+                              >
+                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.id}</TableCell>
+                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.name}</TableCell>
+                                <TableCell sx={{ fontSize: '0.8rem', py: 2, border: 'none' }}>{patient.patient_id}</TableCell>
+                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.age}</TableCell>
+                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.gender}</TableCell>
+                                <TableCell sx={{ fontSize: '0.8rem', py: 2, border: 'none' }}>{patient.contact_number}</TableCell>
+                                <TableCell sx={{ fontSize: '0.8rem', py: 2, border: 'none' }}>{patient.test_type}</TableCell>
+                                <TableCell sx={{ fontSize: '0.8rem', py: 1, border: 'none' }}>
+                                  <Box display="flex" gap={1}>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      color="primary"
+                                      startIcon={<EditIcon fontSize="small" />}
+                                      onClick={() => handleOpenForm(patient)}
+                                    >
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      color="error"
+                                      startIcon={<DeleteIcon fontSize="small" />}
+                                      onClick={() => handleDeletePatient(patient.id!)}
+                                    >
+                                      Delete
+                                    </Button>
+                                  </Box>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
 
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25]}
-                component="div"
-                count={patients.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                sx={{
-                  backgroundColor: '#fff',
-                  borderTop: '1px solid #e0e0e0',
-                  border: 'none',
-                  mt: 0
-                }}
-              />
+                  <TablePagination
+                    rowsPerPageOptions={[10, 25, 50]}
+                    component="div"
+                    count={patients.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    sx={{
+                      backgroundColor: '#fff',
+                      borderTop: '1px solid #e0e0e0',
+                      border: 'none',
+                      mt: 0
+                    }}
+                  />
+                </>
+              )}
             </Box>
+
+            {/* Patient Form Dialog */}
+            <PatientForm
+              open={isFormOpen}
+              onClose={handleCloseForm}
+              patient={currentPatient}
+              onSave={handleSavePatient}
+              isSaving={isSaving}
+            />
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+              open={snackbar.open}
+              autoHideDuration={6000}
+              onClose={handleCloseSnackbar}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+              <Alert
+                onClose={handleCloseSnackbar}
+                severity={snackbar.severity}
+                sx={{ width: '100%' }}
+              >
+                {snackbar.message}
+              </Alert>
+            </Snackbar>
           </Box>
         );
       case 'branches':
