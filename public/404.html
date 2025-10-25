@@ -1,24 +1,22 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Redirecting...</title>
-    <script>
-      // Single Page Apps for GitHub Pages
-      // https://github.com/rafgraph/spa-github-pages
-      (function(l) {
-        var path = l.pathname;
-        // If deployed under a project page like /thyrosoft-web, strip the base
-        var base = '/thyrosoft-web';
-        if (path.startsWith(base)) {
-          path = path.slice(base.length);
+    <script type="text/javascript">
+      // SPA GitHub Pages redirect - https://github.com/rafgraph/spa-github-pages
+      (function(location) {
+        var repo = '/thyrosoft-web';
+        var path = location.pathname;
+        if (path.indexOf(repo) === 0) {
+          path = path.substr(repo.length);
         }
-        // Build redirect URL to index.html with original path in query
-        l.replace(base + '/index.html?redirect=' + encodeURIComponent(path + l.search + l.hash));
-      }(window.location));
+        var search = location.search ? location.search.slice(1).replace(/&/g, '~and~') : '';
+        location.replace(
+          repo + '/?/' + path.replace(/^\//, '') + (search ? ('&' + search) : '') + location.hash
+        );
+      })(window.location);
     </script>
   </head>
-  <body>
-    Redirecting...
-  </body>
-</html>
+  <body>Redirecting...</body>
+  </html>
