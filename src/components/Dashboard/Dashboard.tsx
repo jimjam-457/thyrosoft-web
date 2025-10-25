@@ -21,6 +21,7 @@ import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
   People as PeopleIcon,
+  Business as BranchesIcon,
   Settings as SettingsIcon,
   Notifications as NotificationsIcon,
   ExitToApp as ExitToAppIcon
@@ -211,6 +212,27 @@ const Dashboard: React.FC = () => {
                 <PeopleIcon />
               </ListItemIcon>
               <ListItemText primary="Users" />
+            </ListItemButton>
+            <ListItemButton 
+              component={Link} 
+              to="/branches"
+              selected={window.location.pathname === '/branches'}
+              sx={{
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                },
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                  },
+                },
+              }}
+            >
+              <ListItemIcon>
+                <BranchesIcon />
+              </ListItemIcon>
+              <ListItemText primary="Branches" />
             </ListItemButton>
             <ListItemButton 
               component={Link} 

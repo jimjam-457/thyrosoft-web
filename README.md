@@ -44,6 +44,10 @@ thyrosoft_web/
 | POST | `/api/patients` | Create new patient |
 | PUT | `/api/patients/:id` | Update patient |
 | DELETE | `/api/patients/:id` | Delete patient |
+| GET | `/api/branches` | Get all branches |
+| POST | `/api/branches` | Create new branch |
+| PUT | `/api/branches/:id` | Update branch |
+| DELETE | `/api/branches/:id` | Delete branch |
 
 ## Database Schema
 
@@ -62,9 +66,13 @@ thyrosoft_web/
 - `gender` - Patient gender
 - `age` - Patient age
 - `email` - Patient email
+### Branches Table
+- `id` - Primary Key (Auto-increment)
+- `branch_code` - Unique branch identifier (Required)
+- `branch_name` - Branch name (Required)
+- `phone_number` - Branch contact number
+- `address` - Branch address
 - `created_at` - Record creation timestamp
-
-## Development Commands
 
 ### Frontend Only
 ```bash
@@ -95,7 +103,7 @@ If you need to change the API URL, update it in:
 
 ## Sample Data
 
-The backend automatically creates sample patient data when the database is empty. You can also add patients through the web interface.
+The backend automatically creates sample patient and branch data when the database is empty. You can also add patients and branches through the web interface.
 
 ## CORS Configuration
 
