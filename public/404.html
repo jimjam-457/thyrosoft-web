@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <script>
+      // Single Page Apps for GitHub Pages
+      // https://github.com/rafgraph/spa-github-pages
+      (function(l) {
+        var path = l.pathname;
+        // If deployed under a project page like /thyrosoft-web, strip the base
+        var base = '/thyrosoft-web';
+        if (path.startsWith(base)) {
+          path = path.slice(base.length);
+        }
+        // Build redirect URL to index.html with original path in query
+        l.replace(base + '/index.html?redirect=' + encodeURIComponent(path + l.search + l.hash));
+      }(window.location));
+    </script>
+  </head>
+  <body>
+    Redirecting...
+  </body>
+</html>
