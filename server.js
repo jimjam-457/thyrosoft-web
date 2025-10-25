@@ -14,20 +14,22 @@ console.log(`🔍 Using database at: ${dbPath}`);
 
 // CORS Configuration for React frontend
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3771', 'http://127.0.0.1:3771'],
+  origin: [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://jimjam-457.github.io'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
   exposedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
+  credentials: false,
   optionsSuccessStatus: 200,
   preflightContinue: false
 };
 
-// Enable pre-flight across-the-board
-app.options('*', cors(corsOptions));
-
-// Middleware
+// Enable CORS for all routes
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(bodyParser.json());
 
 // Request logging middleware

@@ -127,6 +127,7 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
   },
 });
 
@@ -415,7 +416,11 @@ const AddNew: React.FC = () => {
     setB2bError(null);
     try {
       const response = await api.get('/b2b-clients');
-      setB2bClients(response.data as B2BClient[]);
+      const data: any = response?.data;
+      const arr = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.items) ? data.items : []);
+      setB2bClients(arr as B2BClient[]);
     } catch (err: any) {
       console.error('Error fetching B2B clients:', err);
       setB2bError('Failed to load clients. Please try again later.');
@@ -449,7 +454,11 @@ const AddNew: React.FC = () => {
     setError(null);
     try {
       const response = await api.get('/patients');
-      setPatients(response.data as Patient[]);
+      const data: any = response?.data;
+      const arr = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.items) ? data.items : []);
+      setPatients(arr as Patient[]);
     } catch (err: any) {
       console.error('Error fetching patients:', err);
       setError('Failed to load patients. Please try again later.');
@@ -465,7 +474,11 @@ const AddNew: React.FC = () => {
     setDoctorsError(null);
     try {
       const response = await api.get('/doctors');
-      setDoctors(response.data as Doctor[]);
+      const data: any = response?.data;
+      const arr = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.items) ? data.items : []);
+      setDoctors(arr as Doctor[]);
     } catch (err: any) {
       console.error('Error fetching doctors:', err);
       setDoctorsError('Failed to load doctors. Please try again later.');
@@ -481,7 +494,11 @@ const AddNew: React.FC = () => {
     setBranchesError(null);
     try {
       const response = await api.get('/branches');
-      setBranches(response.data as Branch[]);
+      const data: any = response?.data;
+      const arr = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.items) ? data.items : []);
+      setBranches(arr as Branch[]);
     } catch (err: any) {
       console.error('Error fetching branches:', err);
       setBranchesError('Failed to load branches. Please try again later.');
@@ -497,7 +514,11 @@ const AddNew: React.FC = () => {
     setUsersError(null);
     try {
       const response = await api.get('/users');
-      setUsers(response.data as User[]);
+      const data: any = response?.data;
+      const arr = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.items) ? data.items : []);
+      setUsers(arr as User[]);
     } catch (err: any) {
       console.error('Error fetching users:', err);
       setUsersError('Failed to load users. Please try again later.');
@@ -513,7 +534,11 @@ const AddNew: React.FC = () => {
     setTestsError(null);
     try {
       const response = await api.get('/tests');
-      setTests(response.data as Test[]);
+      const data: any = response?.data;
+      const arr = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.items) ? data.items : []);
+      setTests(arr as Test[]);
     } catch (err: any) {
       console.error('Error fetching tests:', err);
       setTestsError('Failed to load tests. Please try again later.');
@@ -529,7 +554,11 @@ const AddNew: React.FC = () => {
     setTestPackagesError(null);
     try {
       const response = await api.get('/testpackages');
-      setTestPackages(response.data as TestPackage[]);
+      const data: any = response?.data;
+      const arr = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.items) ? data.items : []);
+      setTestPackages(arr as TestPackage[]);
     } catch (err: any) {
       console.error('Error fetching test packages:', err);
       setTestPackagesError('Failed to load test packages. Please try again later.');
@@ -1062,7 +1091,7 @@ const AddNew: React.FC = () => {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    ) : doctors.length === 0 ? (
+                    ) : !Array.isArray(doctors) || doctors.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
                           <Typography variant="body2" color="textSecondary">
@@ -1071,7 +1100,7 @@ const AddNew: React.FC = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      doctors
+                      (Array.isArray(doctors) ? doctors : [])
                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                         .map((doctor) => (
                           <TableRow
@@ -1121,7 +1150,7 @@ const AddNew: React.FC = () => {
               <TablePagination
                 rowsPerPageOptions={[10, 25, 50]}
                 component="div"
-                count={doctors.length}
+                count={Array.isArray(doctors) ? doctors.length : 0}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}
@@ -1274,7 +1303,7 @@ const AddNew: React.FC = () => {
                   <TablePagination
                     rowsPerPageOptions={[10, 25, 50]}
                     component="div"
-                    count={patients.length}
+                    count={Array.isArray(patients) ? patients.length : 0}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     onPageChange={handleChangePage}
@@ -1816,7 +1845,7 @@ const AddNew: React.FC = () => {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {testPackages.length === 0 ? (
+                        {!Array.isArray(testPackages) || testPackages.length === 0 ? (
                           <TableRow>
                             <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
                               <Typography variant="body2" color="textSecondary">
@@ -1825,7 +1854,7 @@ const AddNew: React.FC = () => {
                             </TableCell>
                           </TableRow>
                         ) : (
-                          testPackages
+                          (Array.isArray(testPackages) ? testPackages : [])
                             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                             .map((testPackage) => (
                               <TableRow
@@ -1969,7 +1998,7 @@ const AddNew: React.FC = () => {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {b2bClients.length === 0 ? (
+                        {!Array.isArray(b2bClients) || b2bClients.length === 0 ? (
                           <TableRow>
                             <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
                               <Typography variant="body2" color="textSecondary">
@@ -1978,7 +2007,7 @@ const AddNew: React.FC = () => {
                             </TableCell>
                           </TableRow>
                         ) : (
-                          b2bClients
+                          (Array.isArray(b2bClients) ? b2bClients : [])
                             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                             .map((client) => (
                               <TableRow key={client.id} hover sx={{ '&:hover': { backgroundColor: '#f5f5f5' }, border: 'none' }}>

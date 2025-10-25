@@ -30,7 +30,13 @@ interface SalesReceiptProps {
   onClose: () => void;
 }
 
-const api = axios.create({ baseURL: API_URL, headers: { 'Content-Type': 'application/json' } });
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
+  },
+});
 
 const currency = (n: number | null | undefined) => `₹${Number(n || 0).toFixed(2)}`;
 

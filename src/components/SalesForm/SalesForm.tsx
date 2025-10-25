@@ -35,7 +35,13 @@ export interface SalesFormProps {
   onUpdate?: (id: number, record: SalesRecordInput & { total: number; balance_due: number }) => void;
 }
 
-const api = axios.create({ baseURL: API_URL, headers: { 'Content-Type': 'application/json' } });
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
+  },
+});
 
 interface Option { id: number; label: string; }
 
