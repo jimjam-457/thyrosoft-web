@@ -41,6 +41,9 @@ const LeftPanel = styled(Box)(({ theme }) => ({
     bottom: 0,
     background: 'rgba(0, 0, 0, 0.5)',
   },
+  [theme.breakpoints.down('md')]: {
+    display: 'none', // Hide on mobile
+  },
 }));
 
 const RightPanel = styled(Box)({
@@ -56,6 +59,10 @@ const FormContainer = styled(Paper)(({ theme }) => ({
   width: '100%',
   maxWidth: '450px',
   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(3),
+    boxShadow: 'none',
+  },
 }));
 
 const Login: React.FC = () => {

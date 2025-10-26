@@ -23,7 +23,11 @@ import {
   CardContent,
   TextField,
   ToggleButtonGroup,
-  ToggleButton
+  ToggleButton,
+  IconButton,
+  AppBar,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -42,7 +46,8 @@ import {
   PersonAdd as AddPatientIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Print as PrintIcon
+  Print as PrintIcon,
+  Menu as MenuIcon
 } from '@mui/icons-material';
 import PatientForm from '../PatientForm/PatientForm';
 import BranchForm from '../BranchForm/BranchForm';
@@ -232,6 +237,9 @@ interface SnackbarState {
 }
 
 const AddNew: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState('dashboard');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -1209,112 +1217,160 @@ const AddNew: React.FC = () => {
             </Box>
 
             <Box sx={{ flex: 1, p: 0, m: 0, overflow: 'auto' }}>
-              {loading ? (
-                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                  <CircularProgress />
-                </Box>
-              ) : error ? (
-                <Box p={3} textAlign="center">
-                  <Typography color="error">{error}</Typography>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={fetchPatients}
-                    sx={{ mt: 2 }}
-                  >
-                    Retry
-                  </Button>
+              {isMobile ? (
+                /* Mobile Card View */
+                <Box sx={{ p: 2 }}>
+                  {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <CircularProgress />
+                    </Box>
+                  ) : error ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography color="error" gutterBottom>{error}</Typography>
+                      <Button variant="outlined" onClick={fetchPatients} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : patients.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body2" color="textSecondary">
+                        No patients found. Click 'Add Patient' to create a new record.
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {patients
+                          .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                          .map((patient) => (
+                            <Card key={patient.id} sx={{ boxShadow: 2 }}>
+                              <CardContent>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                  <Box>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                      {patient.name}
+                                    </Typography>
+                                    <Typography variant="caption" color="textSecondary">PID: {patient.patient_id}</Typography>
+                                  </Box>
+                                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => handleOpenForm(patient)}
+                                      sx={{ color: '#1976d2', width: 40, height: 40 }}
+                                    >
+                                      <EditIcon fontSize="small" />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => handleDeletePatient(patient.id!)}
+                                      sx={{ color: '#d32f2f', width: 40, height: 40 }}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Box>
+                                </Box>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                                  <Box>
+                                    <Typography variant="caption" color="textSecondary" display="block">Age / Gender</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{patient.age} / {patient.gender}</Typography>
+                                  </Box>
+                                  <Box>
+                                    <Typography variant="caption" color="textSecondary" display="block">Contact</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{patient.contact_number || 'N/A'}</Typography>
+                                  </Box>
+                                  <Box sx={{ gridColumn: '1 / -1' }}>
+                                    <Typography variant="caption" color="textSecondary" display="block">Test Type</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{patient.test_type || 'N/A'}</Typography>
+                                  </Box>
+                                </Box>
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </Box>
+                      <TablePagination
+                        component="div"
+                        count={patients.length}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        rowsPerPage={rowsPerPage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                        rowsPerPageOptions={[10, 25, 50]}
+                        sx={{ mt: 2, borderTop: '1px solid #e0e0e0' }}
+                      />
+                    </>
+                  )}
                 </Box>
               ) : (
+                /* Desktop Table View */
                 <>
-                  <TableContainer sx={{ height: '100%', width: '100%' }}>
-                    <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'auto' }} stickyHeader>
-                      <TableHead>
-                        <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>ID</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Patient Name</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '10%', fontSize: '0.875rem', py: 2, border: 'none' }}>Patient ID</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '8%', fontSize: '0.875rem', py: 2, border: 'none' }}>Age</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '10%', fontSize: '0.875rem', py: 2, border: 'none' }}>Gender</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '15%', fontSize: '0.8rem', py: 2, border: 'none' }}>Contact</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.8rem', py: 2, border: 'none' }}>Test Type</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '12%', fontSize: '0.875rem', py: 2, border: 'none' }}>Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {patients.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
-                              <Typography variant="body2" color="textSecondary">
-                                No patients found. Click 'Add Patient' to create a new record.
-                              </Typography>
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          patients
-                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                            .map((patient) => (
-                              <TableRow
-                                key={patient.id}
-                                hover
-                                sx={{
-                                  '&:hover': {
-                                    backgroundColor: '#f5f5f5',
-                                  },
-                                  border: 'none'
-                                }}
-                              >
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.id}</TableCell>
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.name}</TableCell>
-                                <TableCell sx={{ fontSize: '0.8rem', py: 2, border: 'none' }}>{patient.patient_id}</TableCell>
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.age}</TableCell>
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.gender}</TableCell>
-                                <TableCell sx={{ fontSize: '0.8rem', py: 2, border: 'none' }}>{patient.contact_number}</TableCell>
-                                <TableCell sx={{ fontSize: '0.8rem', py: 2, border: 'none' }}>{patient.test_type}</TableCell>
-                                <TableCell sx={{ fontSize: '0.8rem', py: 1, border: 'none' }}>
-                                  <Box display="flex" gap={1}>
-                                    <Button
-                                      size="small"
-                                      variant="outlined"
-                                      color="primary"
-                                      startIcon={<EditIcon fontSize="small" />}
-                                      onClick={() => handleOpenForm(patient)}
-                                    >
-                                      Edit
-                                    </Button>
-                                    <Button
-                                      size="small"
-                                      variant="outlined"
-                                      color="error"
-                                      startIcon={<DeleteIcon fontSize="small" />}
-                                      onClick={() => handleDeletePatient(patient.id!)}
-                                    >
-                                      Delete
-                                    </Button>
-                                  </Box>
+                  {loading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                      <CircularProgress />
+                    </Box>
+                  ) : error ? (
+                    <Box p={3} textAlign="center">
+                      <Typography color="error">{error}</Typography>
+                      <Button variant="outlined" color="primary" onClick={fetchPatients} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : (
+                    <>
+                      <TableContainer sx={{ height: '100%', width: '100%' }}>
+                        <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'auto' }} stickyHeader>
+                          <TableHead>
+                            <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>ID</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Patient Name</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '10%', fontSize: '0.875rem', py: 2, border: 'none' }}>Patient ID</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '8%', fontSize: '0.875rem', py: 2, border: 'none' }}>Age</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '10%', fontSize: '0.875rem', py: 2, border: 'none' }}>Gender</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '15%', fontSize: '0.8rem', py: 2, border: 'none' }}>Contact</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.8rem', py: 2, border: 'none' }}>Test Type</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '12%', fontSize: '0.875rem', py: 2, border: 'none' }}>Actions</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {patients.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
+                                  <Typography variant="body2" color="textSecondary">
+                                    No patients found. Click 'Add Patient' to create a new record.
+                                  </Typography>
                                 </TableCell>
                               </TableRow>
-                            ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-
-                  <TablePagination
-                    rowsPerPageOptions={[10, 25, 50]}
-                    component="div"
-                    count={Array.isArray(patients) ? patients.length : 0}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    sx={{
-                      backgroundColor: '#fff',
-                      borderTop: '1px solid #e0e0e0',
-                      border: 'none',
-                      mt: 0
-                    }}
-                  />
+                            ) : (
+                              patients
+                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                .map((patient) => (
+                                  <TableRow key={patient.id} hover sx={{ '&:hover': { backgroundColor: '#f5f5f5' }, border: 'none' }}>
+                                    <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.id}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.name}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.8rem', py: 2, border: 'none' }}>{patient.patient_id}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.age}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{patient.gender}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.8rem', py: 2, border: 'none' }}>{patient.contact_number}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.8rem', py: 2, border: 'none' }}>{patient.test_type}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.8rem', py: 1, border: 'none' }}>
+                                      <Box display="flex" gap={1}>
+                                        <Button size="small" variant="outlined" color="primary" startIcon={<EditIcon fontSize="small" />} onClick={() => handleOpenForm(patient)}>Edit</Button>
+                                        <Button size="small" variant="outlined" color="error" startIcon={<DeleteIcon fontSize="small" />} onClick={() => handleDeletePatient(patient.id!)}>Delete</Button>
+                                      </Box>
+                                    </TableCell>
+                                  </TableRow>
+                                ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                      <TablePagination
+                        rowsPerPageOptions={[10, 25, 50]}
+                        component="div"
+                        count={patients.length}
+                        rowsPerPage={rowsPerPage}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                        sx={{ backgroundColor: '#fff', borderTop: '1px solid #e0e0e0', border: 'none', mt: 0 }}
+                      />
+                    </>
+                  )}
                 </>
               )}
             </Box>
@@ -1364,108 +1420,112 @@ const AddNew: React.FC = () => {
             </Box>
 
             <Box sx={{ flex: 1, p: 0, m: 0, overflow: 'auto' }}>
-              {branchesLoading ? (
-                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                  <CircularProgress />
-                </Box>
-              ) : branchesError ? (
-                <Box p={3} textAlign="center">
-                  <Typography color="error">{branchesError}</Typography>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={fetchBranches}
-                    sx={{ mt: 2 }}
-                  >
-                    Retry
-                  </Button>
+              {isMobile ? (
+                /* Mobile Card View */
+                <Box sx={{ p: 2 }}>
+                  {branchesLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
+                  ) : branchesError ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography color="error" gutterBottom>{branchesError}</Typography>
+                      <Button variant="outlined" onClick={fetchBranches} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : branches.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body2" color="textSecondary">No branches found. Click 'Add Branch' to create a new branch.</Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {branches.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((branch) => (
+                          <Card key={branch.id} sx={{ boxShadow: 2 }}>
+                            <CardContent>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                <Box>
+                                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>{branch.branch_name}</Typography>
+                                  <Typography variant="caption" color="textSecondary">Code: {branch.branch_code}</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                  <IconButton size="small" onClick={() => handleOpenBranchForm(branch)} sx={{ color: '#1976d2', width: 40, height: 40 }}>
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton size="small" onClick={() => handleDeleteBranch(branch.id!)} sx={{ color: '#d32f2f', width: 40, height: 40 }}>
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">Phone</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{branch.phone_number || 'N/A'}</Typography>
+                                </Box>
+                                <Box sx={{ gridColumn: '1 / -1' }}>
+                                  <Typography variant="caption" color="textSecondary" display="block">Address</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{branch.address || 'N/A'}</Typography>
+                                </Box>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Box>
+                      <TablePagination component="div" count={branches.length} page={page} onPageChange={handleChangePage} rowsPerPage={rowsPerPage} onRowsPerPageChange={handleChangeRowsPerPage} rowsPerPageOptions={[10, 25, 50]} sx={{ mt: 2, borderTop: '1px solid #e0e0e0' }} />
+                    </>
+                  )}
                 </Box>
               ) : (
+                /* Desktop Table View */
                 <>
-                  <TableContainer sx={{ height: '100%', width: '100%' }}>
-                    <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'auto' }} stickyHeader>
-                      <TableHead>
-                        <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>ID</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Branch Code</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Branch Name</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Phone Number</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '18%', fontSize: '0.875rem', py: 2, border: 'none' }}>Address</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '12%', fontSize: '0.875rem', py: 2, border: 'none' }}>Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {branches.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                              <Typography variant="body2" color="textSecondary">
-                                No branches found. Click 'Add Branch' to create a new branch.
-                              </Typography>
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          branches
-                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                            .map((branch) => (
-                              <TableRow
-                                key={branch.id}
-                                hover
-                                sx={{
-                                  '&:hover': {
-                                    backgroundColor: '#f5f5f5',
-                                  },
-                                  border: 'none'
-                                }}
-                              >
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{branch.id}</TableCell>
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{branch.branch_code}</TableCell>
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{branch.branch_name}</TableCell>
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{branch.phone_number}</TableCell>
-                                <TableCell sx={{ fontSize: '0.8rem', py: 2, border: 'none' }}>{branch.address}</TableCell>
-                                <TableCell sx={{ fontSize: '0.8rem', py: 1, border: 'none' }}>
-                                  <Box display="flex" gap={1}>
-                                    <Button
-                                      size="small"
-                                      variant="outlined"
-                                      color="primary"
-                                      startIcon={<EditIcon fontSize="small" />}
-                                      onClick={() => handleOpenBranchForm(branch)}
-                                    >
-                                      Edit
-                                    </Button>
-                                    <Button
-                                      size="small"
-                                      variant="outlined"
-                                      color="error"
-                                      startIcon={<DeleteIcon fontSize="small" />}
-                                      onClick={() => handleDeleteBranch(branch.id!)}
-                                    >
-                                      Delete
-                                    </Button>
-                                  </Box>
+                  {branchesLoading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%"><CircularProgress /></Box>
+                  ) : branchesError ? (
+                    <Box p={3} textAlign="center">
+                      <Typography color="error">{branchesError}</Typography>
+                      <Button variant="outlined" color="primary" onClick={fetchBranches} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : (
+                    <>
+                      <TableContainer sx={{ height: '100%', width: '100%' }}>
+                        <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'auto' }} stickyHeader>
+                          <TableHead>
+                            <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>ID</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Branch Code</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Branch Name</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Phone Number</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '18%', fontSize: '0.875rem', py: 2, border: 'none' }}>Address</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '12%', fontSize: '0.875rem', py: 2, border: 'none' }}>Actions</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {branches.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                                  <Typography variant="body2" color="textSecondary">No branches found. Click 'Add Branch' to create a new branch.</Typography>
                                 </TableCell>
                               </TableRow>
-                            ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-
-                  <TablePagination
-                    rowsPerPageOptions={[10, 25, 50]}
-                    component="div"
-                    count={branches.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    sx={{
-                      backgroundColor: '#fff',
-                      borderTop: '1px solid #e0e0e0',
-                      border: 'none',
-                      mt: 0
-                    }}
-                  />
+                            ) : (
+                              branches.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((branch) => (
+                                <TableRow key={branch.id} hover sx={{ '&:hover': { backgroundColor: '#f5f5f5' }, border: 'none' }}>
+                                  <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{branch.id}</TableCell>
+                                  <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{branch.branch_code}</TableCell>
+                                  <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{branch.branch_name}</TableCell>
+                                  <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{branch.phone_number}</TableCell>
+                                  <TableCell sx={{ fontSize: '0.8rem', py: 2, border: 'none' }}>{branch.address}</TableCell>
+                                  <TableCell sx={{ fontSize: '0.8rem', py: 1, border: 'none' }}>
+                                    <Box display="flex" gap={1}>
+                                      <Button size="small" variant="outlined" color="primary" startIcon={<EditIcon fontSize="small" />} onClick={() => handleOpenBranchForm(branch)}>Edit</Button>
+                                      <Button size="small" variant="outlined" color="error" startIcon={<DeleteIcon fontSize="small" />} onClick={() => handleDeleteBranch(branch.id!)}>Delete</Button>
+                                    </Box>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                      <TablePagination rowsPerPageOptions={[10, 25, 50]} component="div" count={branches.length} rowsPerPage={rowsPerPage} page={page} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage} sx={{ backgroundColor: '#fff', borderTop: '1px solid #e0e0e0', border: 'none', mt: 0 }} />
+                    </>
+                  )}
                 </>
               )}
             </Box>
@@ -1515,25 +1575,69 @@ const AddNew: React.FC = () => {
             </Box>
 
             <Box sx={{ flex: 1, p: 0, m: 0, overflow: 'auto' }}>
-              {usersLoading ? (
-                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                  <CircularProgress />
-                </Box>
-              ) : usersError ? (
-                <Box p={3} textAlign="center">
-                  <Typography color="error">{usersError}</Typography>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={fetchUsers}
-                    sx={{ mt: 2 }}
-                  >
-                    Retry
-                  </Button>
+              {isMobile ? (
+                <Box sx={{ p: 2 }}>
+                  {usersLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
+                  ) : usersError ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography color="error" gutterBottom>{usersError}</Typography>
+                      <Button variant="outlined" onClick={fetchUsers} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : users.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body2" color="textSecondary">No users found. Click 'Add User' to create a new user.</Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {users.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((user) => (
+                          <Card key={user.id} sx={{ boxShadow: 2 }}>
+                            <CardContent>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                <Box>
+                                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>{user.name}</Typography>
+                                  <Typography variant="caption" color="textSecondary">ID: {user.id}</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                  <IconButton size="small" onClick={() => handleOpenUserForm(user)} sx={{ color: '#1976d2', width: 40, height: 40 }}>
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton size="small" onClick={() => handleDeleteUser(user.id!)} sx={{ color: '#d32f2f', width: 40, height: 40 }}>
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">Phone</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{user.phone_number || 'N/A'}</Typography>
+                                </Box>
+                                <Box sx={{ gridColumn: '1 / -1' }}>
+                                  <Typography variant="caption" color="textSecondary" display="block">Email</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{user.email || 'N/A'}</Typography>
+                                </Box>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Box>
+                      <TablePagination component="div" count={users.length} page={page} onPageChange={handleChangePage} rowsPerPage={rowsPerPage} onRowsPerPageChange={handleChangeRowsPerPage} rowsPerPageOptions={[10, 25, 50]} sx={{ mt: 2, borderTop: '1px solid #e0e0e0' }} />
+                    </>
+                  )}
                 </Box>
               ) : (
                 <>
-                  <TableContainer sx={{ height: '100%', width: '100%' }}>
+                  {usersLoading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%"><CircularProgress /></Box>
+                  ) : usersError ? (
+                    <Box p={3} textAlign="center">
+                      <Typography color="error">{usersError}</Typography>
+                      <Button variant="outlined" color="primary" onClick={fetchUsers} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : (
+                    <>
+                      <TableContainer sx={{ height: '100%', width: '100%' }}>
                     <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'auto' }} stickyHeader>
                       <TableHead>
                         <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
@@ -1615,6 +1719,8 @@ const AddNew: React.FC = () => {
                       mt: 0
                     }}
                   />
+                    </>
+                  )}
                 </>
               )}
             </Box>
@@ -1664,106 +1770,108 @@ const AddNew: React.FC = () => {
             </Box>
 
             <Box sx={{ flex: 1, p: 0, m: 0, overflow: 'auto' }}>
-              {testsLoading ? (
-                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                  <CircularProgress />
-                </Box>
-              ) : testsError ? (
-                <Box p={3} textAlign="center">
-                  <Typography color="error">{testsError}</Typography>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={fetchTests}
-                    sx={{ mt: 2 }}
-                  >
-                    Retry
-                  </Button>
+              {isMobile ? (
+                <Box sx={{ p: 2 }}>
+                  {testsLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
+                  ) : testsError ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography color="error" gutterBottom>{testsError}</Typography>
+                      <Button variant="outlined" onClick={fetchTests} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : tests.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body2" color="textSecondary">No tests found. Click 'Add Test' to create a new test.</Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {tests.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((test) => (
+                          <Card key={test.id} sx={{ boxShadow: 2 }}>
+                            <CardContent>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                <Box>
+                                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>{test.testname}</Typography>
+                                  <Typography variant="caption" color="textSecondary">ID: {test.id}</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                  <IconButton size="small" onClick={() => handleOpenTestForm(test)} sx={{ color: '#1976d2', width: 40, height: 40 }}>
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton size="small" onClick={() => handleDeleteTest(test.id!)} sx={{ color: '#d32f2f', width: 40, height: 40 }}>
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">B2C Cost</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>₹{Number(test.cost_b2c).toFixed(2)}</Typography>
+                                </Box>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">B2B Cost</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>₹{Number(test.cost_b2b).toFixed(2)}</Typography>
+                                </Box>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Box>
+                      <TablePagination component="div" count={tests.length} page={page} onPageChange={handleChangePage} rowsPerPage={rowsPerPage} onRowsPerPageChange={handleChangeRowsPerPage} rowsPerPageOptions={[10, 25, 50]} sx={{ mt: 2, borderTop: '1px solid #e0e0e0' }} />
+                    </>
+                  )}
                 </Box>
               ) : (
                 <>
-                  <TableContainer sx={{ height: '100%', width: '100%' }}>
-                    <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'fixed' }} stickyHeader>
-                      <TableHead>
-                        <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>ID</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '45%', fontSize: '0.875rem', py: 2, border: 'none' }}>Test Name</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Cost (B2C)</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Cost (B2B)</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {tests.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                              <Typography variant="body2" color="textSecondary">
-                                No tests found. Click 'Add Test' to create a new test.
-                              </Typography>
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          tests
-                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                            .map((test) => (
-                              <TableRow
-                                key={test.id}
-                                hover
-                                sx={{
-                                  '&:hover': {
-                                    backgroundColor: '#f5f5f5',
-                                  },
-                                  border: 'none'
-                                }}
-                              >
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{test.id}</TableCell>
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{test.testname}</TableCell>
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>₹{Number(test.cost_b2c).toFixed(2)}</TableCell>
-                                <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>₹{Number(test.cost_b2b).toFixed(2)}</TableCell>
-                                <TableCell sx={{ fontSize: '0.8rem', py: 1, border: 'none' }}>
-                                  <Box display="flex" gap={1}>
-                                    <Button
-                                      size="small"
-                                      variant="outlined"
-                                      color="primary"
-                                      startIcon={<EditIcon fontSize="small" />}
-                                      onClick={() => handleOpenTestForm(test)}
-                                    >
-                                      Edit
-                                    </Button>
-                                    <Button
-                                      size="small"
-                                      variant="outlined"
-                                      color="error"
-                                      startIcon={<DeleteIcon fontSize="small" />}
-                                      onClick={() => handleDeleteTest(test.id!)}
-                                    >
-                                      Delete
-                                    </Button>
-                                  </Box>
+                  {testsLoading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%"><CircularProgress /></Box>
+                  ) : testsError ? (
+                    <Box p={3} textAlign="center">
+                      <Typography color="error">{testsError}</Typography>
+                      <Button variant="outlined" color="primary" onClick={fetchTests} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : (
+                    <>
+                      <TableContainer sx={{ height: '100%', width: '100%' }}>
+                        <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'fixed' }} stickyHeader>
+                          <TableHead>
+                            <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>ID</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '45%', fontSize: '0.875rem', py: 2, border: 'none' }}>Test Name</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Cost (B2C)</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Cost (B2B)</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Actions</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {tests.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                                  <Typography variant="body2" color="textSecondary">No tests found. Click 'Add Test' to create a new test.</Typography>
                                 </TableCell>
                               </TableRow>
-                            ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-
-                  <TablePagination
-                    rowsPerPageOptions={[10, 25, 50]}
-                    component="div"
-                    count={tests.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    sx={{
-                      backgroundColor: '#fff',
-                      borderTop: '1px solid #e0e0e0',
-                      border: 'none',
-                      mt: 0
-                    }}
-                  />
+                            ) : (
+                              tests.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((test) => (
+                                <TableRow key={test.id} hover sx={{ '&:hover': { backgroundColor: '#f5f5f5' }, border: 'none' }}>
+                                  <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{test.id}</TableCell>
+                                  <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>{test.testname}</TableCell>
+                                  <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>₹{Number(test.cost_b2c).toFixed(2)}</TableCell>
+                                  <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>₹{Number(test.cost_b2b).toFixed(2)}</TableCell>
+                                  <TableCell sx={{ fontSize: '0.8rem', py: 1, border: 'none' }}>
+                                    <Box display="flex" gap={1}>
+                                      <Button size="small" variant="outlined" color="primary" startIcon={<EditIcon fontSize="small" />} onClick={() => handleOpenTestForm(test)}>Edit</Button>
+                                      <Button size="small" variant="outlined" color="error" startIcon={<DeleteIcon fontSize="small" />} onClick={() => handleDeleteTest(test.id!)}>Delete</Button>
+                                    </Box>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                      <TablePagination rowsPerPageOptions={[10, 25, 50]} component="div" count={tests.length} rowsPerPage={rowsPerPage} page={page} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage} sx={{ backgroundColor: '#fff', borderTop: '1px solid #e0e0e0', border: 'none', mt: 0 }} />
+                    </>
+                  )}
                 </>
               )}
             </Box>
@@ -1813,24 +1921,72 @@ const AddNew: React.FC = () => {
             </Box>
 
             <Box sx={{ flex: 1, p: 0, m: 0, overflow: 'auto' }}>
-              {testPackagesLoading ? (
-                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                  <CircularProgress />
-                </Box>
-              ) : testPackagesError ? (
-                <Box p={3} textAlign="center">
-                  <Typography color="error">{testPackagesError}</Typography>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={fetchTestPackages}
-                    sx={{ mt: 2 }}
-                  >
-                    Retry
-                  </Button>
+              {isMobile ? (
+                <Box sx={{ p: 2 }}>
+                  {testPackagesLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
+                  ) : testPackagesError ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography color="error" gutterBottom>{testPackagesError}</Typography>
+                      <Button variant="outlined" onClick={fetchTestPackages} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : !Array.isArray(testPackages) || testPackages.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body2" color="textSecondary">No test packages found. Click 'Add Test Package' to create a new package.</Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {testPackages.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((testPackage) => (
+                          <Card key={testPackage.id} sx={{ boxShadow: 2 }}>
+                            <CardContent>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                <Box>
+                                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>{testPackage.testpackage_name}</Typography>
+                                  <Typography variant="caption" color="textSecondary">{testPackage.no_of_tests} Tests</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                  <IconButton size="small" onClick={() => handleOpenTestPackageForm(testPackage)} sx={{ color: '#1976d2', width: 40, height: 40 }}>
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton size="small" onClick={() => handleDeleteTestPackage(testPackage.id!)} sx={{ color: '#d32f2f', width: 40, height: 40 }}>
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 1.5 }}>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">B2C Cost</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>₹{Number(testPackage.cost_b2c).toFixed(2)}</Typography>
+                                </Box>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">B2B Cost</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>₹{Number(testPackage.cost_b2b).toFixed(2)}</Typography>
+                                </Box>
+                              </Box>
+                              <Box>
+                                <Typography variant="caption" color="textSecondary" display="block">Tests Included</Typography>
+                                <Typography variant="body2" sx={{ fontSize: '0.8rem', mt: 0.5 }}>{testPackage.list_of_tests || 'N/A'}</Typography>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Box>
+                      <TablePagination component="div" count={testPackages.length} page={page} onPageChange={handleChangePage} rowsPerPage={rowsPerPage} onRowsPerPageChange={handleChangeRowsPerPage} rowsPerPageOptions={[10, 25, 50]} sx={{ mt: 2, borderTop: '1px solid #e0e0e0' }} />
+                    </>
+                  )}
                 </Box>
               ) : (
                 <>
+                  {testPackagesLoading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%"><CircularProgress /></Box>
+                  ) : testPackagesError ? (
+                    <Box p={3} textAlign="center">
+                      <Typography color="error">{testPackagesError}</Typography>
+                      <Button variant="outlined" color="primary" onClick={fetchTestPackages} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : (
+                    <>
                   <TableContainer sx={{ height: '100%', width: '100%' }}>
                     <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'fixed' }} stickyHeader>
                       <TableHead>
@@ -1927,6 +2083,8 @@ const AddNew: React.FC = () => {
                       mt: 0
                     }}
                   />
+                    </>
+                  )}
                 </>
               )}
             </Box>
@@ -1974,19 +2132,68 @@ const AddNew: React.FC = () => {
             </Box>
 
             <Box sx={{ flex: 1, p: 0, m: 0, overflow: 'auto' }}>
-              {b2bLoading ? (
-                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                  <CircularProgress />
-                </Box>
-              ) : b2bError ? (
-                <Box p={3} textAlign="center">
-                  <Typography color="error">{b2bError}</Typography>
-                  <Button variant="outlined" color="primary" onClick={fetchB2bClients} sx={{ mt: 2 }}>
-                    Retry
-                  </Button>
+              {isMobile ? (
+                <Box sx={{ p: 2 }}>
+                  {b2bLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
+                  ) : b2bError ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography color="error" gutterBottom>{b2bError}</Typography>
+                      <Button variant="outlined" onClick={fetchB2bClients} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : !Array.isArray(b2bClients) || b2bClients.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body2" color="textSecondary">No clients found. Click 'Add Client' to create a new client.</Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {b2bClients.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((client) => (
+                          <Card key={client.id} sx={{ boxShadow: 2 }}>
+                            <CardContent>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                <Box>
+                                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>{client.institution_name}</Typography>
+                                  <Typography variant="caption" color="textSecondary">ID: {client.id}</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                  <IconButton size="small" onClick={() => handleOpenB2bForm(client)} sx={{ color: '#1976d2', width: 40, height: 40 }}>
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton size="small" onClick={() => handleDeleteB2bClient(client.id!)} sx={{ color: '#d32f2f', width: 40, height: 40 }}>
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1.5 }}>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">Phone</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{client.phone_number || 'N/A'}</Typography>
+                                </Box>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">Address</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{client.address || 'N/A'}</Typography>
+                                </Box>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Box>
+                      <TablePagination component="div" count={b2bClients.length} page={page} onPageChange={handleChangePage} rowsPerPage={rowsPerPage} onRowsPerPageChange={handleChangeRowsPerPage} rowsPerPageOptions={[10, 25, 50]} sx={{ mt: 2, borderTop: '1px solid #e0e0e0' }} />
+                    </>
+                  )}
                 </Box>
               ) : (
                 <>
+                  {b2bLoading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%"><CircularProgress /></Box>
+                  ) : b2bError ? (
+                    <Box p={3} textAlign="center">
+                      <Typography color="error">{b2bError}</Typography>
+                      <Button variant="outlined" color="primary" onClick={fetchB2bClients} sx={{ mt: 2 }}>Retry</Button>
+                    </Box>
+                  ) : (
+                    <>
                   <TableContainer sx={{ height: '100%', width: '100%', overflowX: 'hidden' }}>
                     <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'auto' }} stickyHeader>
                       <TableHead>
@@ -2037,6 +2244,8 @@ const AddNew: React.FC = () => {
                     onRowsPerPageChange={handleChangeRowsPerPage}
                     sx={{ backgroundColor: '#fff', borderTop: '1px solid #e0e0e0', border: 'none', mt: 0 }}
                   />
+                    </>
+                  )}
                 </>
               )}
             </Box>
@@ -2098,8 +2307,79 @@ const AddNew: React.FC = () => {
             {/* Modal Sales Form */}
 
             <Box sx={{ flex: 1, p: 0, m: 0, overflow: 'auto' }}>
-              <TableContainer sx={{ height: '100%', width: '100%', overflowX: 'hidden' }}>
-                <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'auto' }} stickyHeader>
+              {isMobile ? (
+                <Box sx={{ p: 2 }}>
+                  {salesLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
+                  ) : salesError ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography color="error" gutterBottom>{salesError}</Typography>
+                    </Box>
+                  ) : sales.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body2" color="textSecondary">No sales yet. Click '+ Add Sale' to create one.</Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {sales.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((sale) => (
+                          <Card key={sale.id || sale.invoice_no} sx={{ boxShadow: 2 }}>
+                            <CardContent>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                <Box>
+                                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>Invoice #{sale.invoice_no}</Typography>
+                                  <Typography variant="caption" color="textSecondary">{sale.date}</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                  <IconButton size="small" disabled={!sale.id} onClick={() => handleEditSale(sale)} sx={{ color: '#1976d2', width: 36, height: 36 }}>
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton size="small" disabled={!sale.id} onClick={() => handleOpenReceipt(sale)} sx={{ color: '#9c27b0', width: 36, height: 36 }}>
+                                    <PrintIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton size="small" disabled={!sale.id} onClick={() => handleDeleteSale(sale)} sx={{ color: '#d32f2f', width: 36, height: 36 }}>
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 1.5 }}>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">Client</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{sale.client}</Typography>
+                                </Box>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">Patient</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{sale.patient_name || 'N/A'}</Typography>
+                                </Box>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">Paid</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500, color: '#2e7d32' }}>₹{Number(sale.paid || 0).toFixed(2)}</Typography>
+                                </Box>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">Balance</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500, color: sale.balance > 0 ? '#d32f2f' : '#666' }}>₹{Number(sale.balance || 0).toFixed(2)}</Typography>
+                                </Box>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">Status</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{sale.status}</Typography>
+                                </Box>
+                                <Box>
+                                  <Typography variant="caption" color="textSecondary" display="block">Ref. Doctor</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{sale.ref_by_doctor || 'N/A'}</Typography>
+                                </Box>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Box>
+                      <TablePagination component="div" count={sales.length} page={page} onPageChange={handleChangePage} rowsPerPage={rowsPerPage} onRowsPerPageChange={handleChangeRowsPerPage} rowsPerPageOptions={[10, 25, 50]} sx={{ mt: 2, borderTop: '1px solid #e0e0e0' }} />
+                    </>
+                  )}
+                </Box>
+              ) : (
+                <>
+                  <TableContainer sx={{ height: '100%', width: '100%', overflowX: 'hidden' }}>
+                  <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'auto' }} stickyHeader>
                   <TableHead>
                     <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
                       <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none' }}>Invoice No</TableCell>
@@ -2167,18 +2447,20 @@ const AddNew: React.FC = () => {
                     )}
                   </TableBody>
                 </Table>
-              </TableContainer>
+                </TableContainer>
 
-              <TablePagination
-                rowsPerPageOptions={[10, 25, 50]}
-                component="div"
-                count={sales.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                sx={{ backgroundColor: '#fff', borderTop: '1px solid #e0e0e0', border: 'none', mt: 0 }}
-              />
+                <TablePagination
+                  rowsPerPageOptions={[10, 25, 50]}
+                  component="div"
+                  count={sales.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  sx={{ backgroundColor: '#fff', borderTop: '1px solid #e0e0e0', border: 'none', mt: 0 }}
+                />
+                </>
+              )}
             </Box>
 
             <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
@@ -2247,50 +2529,116 @@ const AddNew: React.FC = () => {
     }
   };
 
+  const handleDrawerToggle = () => {
+    setMobileDrawerOpen(!mobileDrawerOpen);
+  };
+
+  const handleMenuItemClick = (itemId: string) => {
+    handleListItemClick(itemId);
+    if (isMobile) {
+      setMobileDrawerOpen(false);
+    }
+  };
+
+  const drawerContent = (
+    <>
+      <Toolbar sx={{ minHeight: '64px', px: 2 }} />
+      <Box sx={{ overflow: 'auto', flex: 1 }}>
+        <List>
+          {menuItems.map((item) => (
+            <ListItem key={item.id} disablePadding>
+              <StyledListItemButton
+                selected={selectedItem === item.id}
+                onClick={() => handleMenuItemClick(item.id)}
+                sx={{
+                  minHeight: '48px',
+                  px: 2,
+                  py: 1
+                }}
+              >
+                <ListItemIcon sx={{ color: 'inherit', minWidth: '40px' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    fontSize: '0.875rem',
+                    fontWeight: selectedItem === item.id ? 600 : 400
+                  }}
+                />
+              </StyledListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </>
+  );
+
   return (
     <Box sx={{ display: 'flex', height: '100vh', m: 0, p: 0 }}>
-      <StyledDrawer
-        variant="permanent"
-        open
-        sx={{
-          '& .MuiDrawer-paper': {
-            position: 'relative',
-            height: '100vh',
-            border: 'none',
-            boxShadow: '2px 0 4px rgba(0,0,0,0.1)'
-          }
-        }}
-      >
-        <Toolbar sx={{ minHeight: '64px', px: 2 }} />
-        <Box sx={{ overflow: 'auto', flex: 1 }}>
-          <List>
-            {menuItems.map((item) => (
-              <ListItem key={item.id} disablePadding>
-                <StyledListItemButton
-                  selected={selectedItem === item.id}
-                  onClick={() => handleListItemClick(item.id)}
-                  sx={{
-                    minHeight: '48px',
-                    px: 2,
-                    py: 1
-                  }}
-                >
-                  <ListItemIcon sx={{ color: 'inherit', minWidth: '40px' }}>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontSize: '0.875rem',
-                      fontWeight: selectedItem === item.id ? 600 : 400
-                    }}
-                  />
-                </StyledListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </StyledDrawer>
+      {/* Mobile: AppBar with Hamburger Menu */}
+      {isMobile && (
+        <AppBar
+          position="fixed"
+          sx={{
+            zIndex: (theme) => theme.zIndex.drawer + 1,
+            backgroundColor: '#1976d2'
+          }}
+        >
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2 }}
+              aria-label="open menu"
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" noWrap component="div">
+              Thyrosoft
+            </Typography>
+          </Toolbar>
+        </AppBar>
+      )}
+
+      {/* Mobile: Temporary Drawer (slides from left) */}
+      {isMobile ? (
+        <Drawer
+          variant="temporary"
+          open={mobileDrawerOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+              backgroundColor: theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      ) : (
+        /* Desktop: Permanent Drawer (always visible) */
+        <StyledDrawer
+          variant="permanent"
+          open
+          sx={{
+            '& .MuiDrawer-paper': {
+              position: 'relative',
+              height: '100vh',
+              border: 'none',
+              boxShadow: '2px 0 4px rgba(0,0,0,0.1)'
+            }
+          }}
+        >
+          {drawerContent}
+        </StyledDrawer>
+      )}
 
       <Box
         component="main"
@@ -2301,7 +2649,8 @@ const AddNew: React.FC = () => {
           backgroundColor: '#f5f5f5',
           overflow: 'auto',
           border: 'none',
-          position: 'relative'
+          position: 'relative',
+          mt: isMobile ? '64px' : 0,
         }}
       >
         <Paper
