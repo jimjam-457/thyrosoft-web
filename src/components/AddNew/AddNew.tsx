@@ -61,6 +61,7 @@ import axios from 'axios';
 import { API_URL } from '../../config';
 import { Alert, CircularProgress, Snackbar } from '@mui/material';
 import SalesReceipt from '../SalesReceipt/SalesReceipt';
+import Reports from '../Reports/Reports';
 
 type AlertColor = 'success' | 'info' | 'warning' | 'error';
 
@@ -2494,16 +2495,7 @@ const AddNew: React.FC = () => {
           </Box>
         );
       case 'reports':
-        return (
-          <Box>
-            <Typography variant="h5" gutterBottom>
-              Reports & Analytics
-            </Typography>
-            <Typography variant="body1">
-              Generate and view comprehensive reports and analytics.
-            </Typography>
-          </Box>
-        );
+        return <Reports />;
       case 'logout':
         return (
           <Box>

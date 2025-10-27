@@ -1590,6 +1590,155 @@ app.delete('/api/users/:id', (req, res) => {
     });
 });
 
+// ============================================
+// REPORTS ENDPOINTS
+// ============================================
+
+// GET /api/reports/referrals - Fetch all referral reports
+app.get('/api/reports/referrals', (req, res) => {
+    console.log('🔍 GET /api/reports/referrals - Fetching referral reports...');
+    
+    // Query to get all sales with referral information
+    const salesQuery = `
+        SELECT 
+            s.id,
+            s.date,
+            s.client_type,
+            bc.institution_name as b2b_client_name,
+            d.name as ref_by_doctor_name,
+            s.patient_name,
+            s.items as tests,
+            s.advance as paid,
+            s.balance_due as balance,
+            s.status as payment_status
+        FROM sales s
+        LEFT JOIN b2b_clients bc ON s.b2b_client_id = bc.id
+        LEFT JOIN doctors d ON s.ref_by_doctor_id = d.id
+        WHERE s.ref_by_doctor_id IS NOT NULL OR s.b2b_client_id IS NOT NULL
+        ORDER BY s.date DESC
+    `;
+    
+    db.all(salesQuery, [], (err, sales) => {
+        if (err) {
+            console.error('❌ Error fetching sales:', err);
+            return res.status(500).json({ error: 'Failed to fetch sales data' });
+        }
+        
+        // Get all tests to fetch B2B prices
+        db.all('SELECT testname, cost_b2b FROM tests', [], (testErr, tests) => {
+            if (testErr) {
+                console.error('❌ Error fetching tests:', testErr);
+                return res.status(500).json({ error: 'Failed to fetch test prices' });
+            }
+            
+            // Create a map of test names to B2B prices
+            const testPriceMap = {};
+            tests.forEach(test => {
+                testPriceMap[test.testname] = parseFloat(test.cost_b2b) || 0;
+            });
+            
+            // Group sales by doctor/B2B client
+            const referralMap = {};
+            
+            sales.forEach(sale => {
+                // Determine if this is a doctor referral or B2B client
+                const referrerName = sale.ref_by_doctor_name || sale.b2b_client_name || 'Unknown';
+                const referrerType = sale.ref_by_doctor_name ? 'doctor' : 'b2b';
+                
+                // Parse tests from JSON string
+                let testList = [];
+                try {
+                    testList = sale.tests ? JSON.parse(sale.tests) : [];
+                } catch (e) {
+                    console.error('Error parsing tests:', e);
+                    testList = [];
+                }
+                
+                // Calculate B2B amount for this sale
+                let b2bAmount = 0;
+                const testNames = testList.map(test => {
+                    const testName = typeof test === 'string' ? test : (test.name || test.testName || '');
+                    const price = testPriceMap[testName] || 0;
+                    b2bAmount += price;
+                    return testName;
+                });
+                
+                // Initialize referrer entry if it doesn't exist
+                if (!referralMap[referrerName]) {
+                    referralMap[referrerName] = {
+                        doctor_or_b2b_client: referrerName,
+                        type: referrerType,
+                        total_referrals: 0,
+                        patients: [],
+                        total_amount: 0,
+                        payment_status: 'paid',
+                        created_at: sale.date
+                    };
+                }
+                
+                // Add patient info
+                referralMap[referrerName].patients.push({
+                    patient_name: sale.patient_name || 'Unknown',
+                    tests: testNames,
+                    b2b_amount: b2bAmount
+                });
+                
+                // Update totals
+                referralMap[referrerName].total_referrals += 1;
+                referralMap[referrerName].total_amount += b2bAmount;
+                
+                // Update payment status
+                if (sale.payment_status && sale.payment_status.toLowerCase() !== 'paid') {
+                    if (referralMap[referrerName].payment_status === 'paid') {
+                        referralMap[referrerName].payment_status = 'partial';
+                    } else if (parseFloat(sale.balance) > 0) {
+                        referralMap[referrerName].payment_status = 'pending';
+                    }
+                }
+            });
+            
+            // Convert map to array and add IDs
+            const referralReports = Object.values(referralMap).map((report, index) => ({
+                id: index + 1,
+                ...report
+            }));
+            
+            console.log(`✅ Found ${referralReports.length} referral reports`);
+            res.json(referralReports);
+        });
+    });
+});
+
+// POST /api/reports/referrals/update-payment - Update payment status
+app.post('/api/reports/referrals/update-payment', (req, res) => {
+    const { doctor_or_b2b_client, payment_status } = req.body;
+    
+    if (!doctor_or_b2b_client || !payment_status) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Update all sales for this doctor/B2B client
+    const updateQuery = `
+        UPDATE sales 
+        SET status = ?
+        WHERE ref_by_doctor_id IN (SELECT id FROM doctors WHERE name = ?)
+           OR b2b_client_id IN (SELECT id FROM b2b_clients WHERE institution_name = ?)
+    `;
+    
+    db.run(updateQuery, [payment_status, doctor_or_b2b_client, doctor_or_b2b_client], function(err) {
+        if (err) {
+            console.error('❌ Error updating payment status:', err);
+            return res.status(500).json({ error: 'Failed to update payment status' });
+        }
+        
+        res.json({ 
+            success: true, 
+            message: 'Payment status updated successfully',
+            changes: this.changes 
+        });
+    });
+});
+
 const server = app.listen(port, '0.0.0.0', () => {
     console.log(`🚀 Server running at http://localhost:${port}`);
     console.log(`🚀 Server accessible at http://127.0.0.1:${port}`);
