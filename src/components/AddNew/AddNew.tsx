@@ -1051,126 +1051,221 @@ const AddNew: React.FC = () => {
       case 'doctors':
         return (
           <Box sx={{ p: 0, m: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 3, py: 2, borderBottom: '1px solid #e0e0e0', backgroundColor: '#fff', flexShrink: 0 }}>
-              <Typography variant="h5">
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 2, md: 3 }, py: 2, borderBottom: '1px solid #e0e0e0', backgroundColor: '#fff', flexShrink: 0 }}>
+              <Typography variant={isMobile ? "h6" : "h5"}>
                 Doctors Management
               </Typography>
               <Button
                 variant="contained"
                 color="primary"
-                startIcon={<DoctorsIcon />}
-                size="large"
+                startIcon={!isMobile && <DoctorsIcon />}
+                size={isMobile ? "medium" : "large"}
                 onClick={() => handleOpenDoctorForm()}
               >
-                Add Doctor
+                {isMobile ? "Add" : "Add Doctor"}
               </Button>
             </Box>
 
             <Box sx={{ flex: 1, p: 0, m: 0, overflow: 'auto' }}>
-              <TableContainer sx={{ height: '100%', width: '100%' }}>
-                <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'fixed' }} stickyHeader>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>ID</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Doctor Name</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Specialization</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Clinic Name</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '15%', fontSize: '0.875rem', py: 2, border: 'none' }}>Phone Number</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {doctorsLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                          <CircularProgress />
-                        </TableCell>
-                      </TableRow>
-                    ) : doctorsError ? (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                          <Typography color="error">{doctorsError}</Typography>
-                          <Button
-                            variant="outlined"
-                            color="primary"
-                            onClick={fetchDoctors}
-                            sx={{ mt: 2 }}
-                          >
-                            Retry
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ) : !Array.isArray(doctors) || doctors.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                          <Typography variant="body2" color="textSecondary">
-                            No doctors found. Click 'Add Doctor' to create a new doctor.
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      (Array.isArray(doctors) ? doctors : [])
+              {/* Mobile Card View */}
+              {isMobile ? (
+                <Box sx={{ p: 2 }}>
+                  {doctorsLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                      <CircularProgress />
+                    </Box>
+                  ) : doctorsError ? (
+                    <Box sx={{ textAlign: 'center', py: 3 }}>
+                      <Typography color="error">{doctorsError}</Typography>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={fetchDoctors}
+                        sx={{ mt: 2 }}
+                      >
+                        Retry
+                      </Button>
+                    </Box>
+                  ) : !Array.isArray(doctors) || doctors.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', py: 3 }}>
+                      <Typography variant="body2" color="textSecondary">
+                        No doctors found. Click 'Add' to create a new doctor.
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      {(Array.isArray(doctors) ? doctors : [])
                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                         .map((doctor) => (
-                          <TableRow
-                            key={doctor.id}
-                            hover
-                            sx={{
-                              '&:hover': {
-                                backgroundColor: '#f5f5f5',
-                              },
-                              border: 'none'
-                            }}
-                          >
-                            <TableCell sx={{ width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.id}</TableCell>
-                            <TableCell sx={{ width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.name}</TableCell>
-                            <TableCell sx={{ width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.specialization}</TableCell>
-                            <TableCell sx={{ width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.clinicName}</TableCell>
-                            <TableCell sx={{ width: '15%', fontSize: '0.8rem', py: 2, border: 'none' }}>{doctor.phone_number}</TableCell>
-                            <TableCell sx={{ width: '5%', fontSize: '0.8rem', py: 1, border: 'none' }}>
-                              <Box display="flex" gap={1}>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  color="primary"
-                                  startIcon={<EditIcon fontSize="small" />}
-                                  onClick={() => handleOpenDoctorForm(doctor)}
-                                >
-                                  Edit
-                                </Button>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  color="error"
-                                  startIcon={<DeleteIcon fontSize="small" />}
-                                  onClick={() => handleDeleteDoctor(doctor.id!)}
-                                >
-                                  Delete
-                                </Button>
+                          <Card key={doctor.id} sx={{ mb: 2, boxShadow: 2 }}>
+                            <CardContent>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                <Box sx={{ flex: 1 }}>
+                                  <Typography variant="h6" sx={{ fontWeight: 600, color: '#1976d2', mb: 0.5 }}>
+                                    {doctor.name}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                                    <strong>ID:</strong> {doctor.id}
+                                  </Typography>
+                                </Box>
                               </Box>
+                              
+                              <Box sx={{ mb: 2 }}>
+                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                  <strong>Specialization:</strong> {doctor.specialization}
+                                </Typography>
+                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                  <strong>Clinic:</strong> {doctor.clinicName}
+                                </Typography>
+                                <Typography variant="body2">
+                                  <strong>Phone:</strong> {doctor.phone_number}
+                                </Typography>
+                              </Box>
+
+                              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                <IconButton
+                                  size="small"
+                                  color="primary"
+                                  onClick={() => handleOpenDoctorForm(doctor)}
+                                  sx={{ border: '1px solid', borderColor: 'primary.main' }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleDeleteDoctor(doctor.id!)}
+                                  sx={{ border: '1px solid', borderColor: 'error.main' }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      
+                      <TablePagination
+                        rowsPerPageOptions={[10, 25, 50]}
+                        component="div"
+                        count={Array.isArray(doctors) ? doctors.length : 0}
+                        rowsPerPage={rowsPerPage}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                        sx={{ backgroundColor: '#fff', mt: 2 }}
+                      />
+                    </>
+                  )}
+                </Box>
+              ) : (
+                /* Desktop Table View */
+                <>
+                  <TableContainer sx={{ height: '100%', width: '100%' }}>
+                    <Table sx={{ minWidth: '100%', width: '100%', tableLayout: 'fixed' }} stickyHeader>
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>ID</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Doctor Name</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Specialization</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Clinic Name</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '15%', fontSize: '0.875rem', py: 2, border: 'none' }}>Phone Number</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>Actions</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {doctorsLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                              <CircularProgress />
                             </TableCell>
                           </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                        ) : doctorsError ? (
+                          <TableRow>
+                            <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                              <Typography color="error">{doctorsError}</Typography>
+                              <Button
+                                variant="outlined"
+                                color="primary"
+                                onClick={fetchDoctors}
+                                sx={{ mt: 2 }}
+                              >
+                                Retry
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ) : !Array.isArray(doctors) || doctors.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                              <Typography variant="body2" color="textSecondary">
+                                No doctors found. Click 'Add Doctor' to create a new doctor.
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          (Array.isArray(doctors) ? doctors : [])
+                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                            .map((doctor) => (
+                              <TableRow
+                                key={doctor.id}
+                                hover
+                                sx={{
+                                  '&:hover': {
+                                    backgroundColor: '#f5f5f5',
+                                  },
+                                  border: 'none'
+                                }}
+                              >
+                                <TableCell sx={{ width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.id}</TableCell>
+                                <TableCell sx={{ width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.name}</TableCell>
+                                <TableCell sx={{ width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.specialization}</TableCell>
+                                <TableCell sx={{ width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.clinicName}</TableCell>
+                                <TableCell sx={{ width: '15%', fontSize: '0.8rem', py: 2, border: 'none' }}>{doctor.phone_number}</TableCell>
+                                <TableCell sx={{ width: '5%', fontSize: '0.8rem', py: 1, border: 'none' }}>
+                                  <Box display="flex" gap={1}>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      color="primary"
+                                      startIcon={<EditIcon fontSize="small" />}
+                                      onClick={() => handleOpenDoctorForm(doctor)}
+                                    >
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      color="error"
+                                      startIcon={<DeleteIcon fontSize="small" />}
+                                      onClick={() => handleDeleteDoctor(doctor.id!)}
+                                    >
+                                      Delete
+                                    </Button>
+                                  </Box>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
 
-              <TablePagination
-                rowsPerPageOptions={[10, 25, 50]}
-                component="div"
-                count={Array.isArray(doctors) ? doctors.length : 0}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                sx={{
-                  backgroundColor: '#fff',
-                  borderTop: '1px solid #e0e0e0',
-                  border: 'none',
-                  mt: 0
-                }}
-              />
+                  <TablePagination
+                    rowsPerPageOptions={[10, 25, 50]}
+                    component="div"
+                    count={Array.isArray(doctors) ? doctors.length : 0}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    sx={{
+                      backgroundColor: '#fff',
+                      borderTop: '1px solid #e0e0e0',
+                      border: 'none',
+                      mt: 0
+                    }}
+                  />
+                </>
+              )}
             </Box>
 
             {/* Doctor Form Dialog */}
