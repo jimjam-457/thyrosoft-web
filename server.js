@@ -2068,6 +2068,33 @@ app.get('/api/sales', (req, res) => {
     });
 });
 
+// GET single sale by ID
+app.get('/api/sales/:id', (req, res) => {
+    const id = req.params.id;
+    const sql = `
+        SELECT s.*, 
+               bc.institution_name, 
+               d.name AS doctor_name,
+               b.branch_name
+        FROM sales s
+        LEFT JOIN b2b_clients bc ON bc.id = s.b2b_client_id
+        LEFT JOIN doctors d ON d.id = s.ref_by_doctor_id
+        LEFT JOIN branches b ON b.id = s.branch_id
+        WHERE s.id = ?
+    `;
+    db.get(sql, [id], (err, row) => {
+        if (err) {
+            console.error('❌ Error fetching sale:', err);
+            return res.status(500).json({ error: err.message });
+        }
+        if (!row) {
+            return res.status(404).json({ error: 'Sale not found' });
+        }
+        const data = { ...row, items: row.items ? JSON.parse(row.items) : [] };
+        res.json(data);
+    });
+});
+
 // POST create sale
 app.post('/api/sales', (req, res) => {
     const {

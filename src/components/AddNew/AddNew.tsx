@@ -1140,11 +1140,11 @@ const AddNew: React.FC = () => {
                       <TableHead>
                         <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
                           <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>ID</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Doctor Name</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Specialization</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>Clinic Name</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Doctor Name</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Specialization</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>Clinic Name</TableCell>
                           <TableCell sx={{ fontWeight: 600, color: '#333', width: '15%', fontSize: '0.875rem', py: 2, border: 'none' }}>Phone Number</TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>Actions</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#333', width: '20%', fontSize: '0.875rem', py: 2, border: 'none', whiteSpace: 'nowrap' }}>Actions</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -1191,11 +1191,11 @@ const AddNew: React.FC = () => {
                                 }}
                               >
                                 <TableCell sx={{ width: '5%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.id}</TableCell>
-                                <TableCell sx={{ width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.name}</TableCell>
-                                <TableCell sx={{ width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.specialization}</TableCell>
-                                <TableCell sx={{ width: '25%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.clinicName}</TableCell>
+                                <TableCell sx={{ width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.name}</TableCell>
+                                <TableCell sx={{ width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.specialization}</TableCell>
+                                <TableCell sx={{ width: '20%', fontSize: '0.875rem', py: 2, border: 'none' }}>{doctor.clinicName}</TableCell>
                                 <TableCell sx={{ width: '15%', fontSize: '0.8rem', py: 2, border: 'none' }}>{doctor.phone_number}</TableCell>
-                                <TableCell sx={{ width: '5%', fontSize: '0.8rem', py: 1, border: 'none' }}>
+                                <TableCell sx={{ width: '20%', fontSize: '0.8rem', py: 1, border: 'none', whiteSpace: 'nowrap' }}>
                                   <Box display="flex" gap={1}>
                                     <Button
                                       size="small"
@@ -2546,20 +2546,6 @@ const AddNew: React.FC = () => {
               onClose={handleCloseSalesForm}
               onSave={handleSaveSale}
               saleId={editingSale?.id as any}
-              initialData={editingSale ? {
-                date: editingSale.date,
-                client_type: editingSale.client as any,
-                b2b_client_name: editingSale.institution && editingSale.institution !== '—' ? editingSale.institution : null,
-                ref_by_doctor_name: editingSale.ref_by_doctor && editingSale.ref_by_doctor !== '—' ? editingSale.ref_by_doctor : null,
-                patient_name: editingSale.patient_name || '',
-                // tests not available on list; leave empty so user can modify
-                tests: [],
-                discount_mode: 'amount',
-                discount_value: 0,
-                advance: 0,
-                status: editingSale.status as any,
-                payment_method: 'Cash'
-              } : undefined}
               onUpdate={handleUpdateSale}
             />
           </Box>

@@ -90,34 +90,69 @@ const SalesForm: React.FC<SalesFormProps> = ({ open, onClose, onSave, inline, sa
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    Promise.all([
+    const requests = [
       api.get('/branches'),
       api.get('/doctors'),
       api.get('/patients'),
       api.get('/tests'),
       api.get('/testpackages'),
       api.get('/b2b-clients'),
-    ])
-      .then(([branchesRes, doctorsRes, patientsRes, testsRes, packagesRes, clientsRes]) => {
+    ];
+    
+    // If editing, also fetch the sale data
+    if (saleId) {
+      requests.push(api.get(`/sales/${saleId}`));
+    }
+    
+    Promise.all(requests)
+      .then((responses) => {
+        const [branchesRes, doctorsRes, patientsRes, testsRes, packagesRes, clientsRes, saleRes] = responses;
         const branchesArr = (branchesRes.data as any[]) || [];
         const doctorsArr = (doctorsRes.data as any[]) || [];
         const patientsArr = (patientsRes.data as any[]) || [];
         const testsArr = (testsRes.data as any[]) || [];
         const packagesArr = (packagesRes.data as any[]) || [];
         const clientsArr = (clientsRes.data as any[]) || [];
-        setBranches(branchesArr.map((b: any) => ({ id: b.id, label: b.branch_name })));
-        setDoctors(doctorsArr.map((d: any) => ({ id: d.id, label: d.name })));
+        
+        // Add "-" option to dropdowns
+        setBranches([{ id: null, label: '-' }, ...branchesArr.map((b: any) => ({ id: b.id, label: b.branch_name }))]);
+        setDoctors([{ id: null, label: '-' }, ...doctorsArr.map((d: any) => ({ id: d.id, label: d.name }))]);
         setPatients(patientsArr.map((p: any) => ({ id: p.id, label: p.name })));
         setTests(testsArr.map((t: any) => ({ id: t.id, name: t.testname, price: Number(t.cost_b2c) })));
         setPackages(packagesArr.map((pk: any) => ({ id: pk.id, name: pk.testpackage_name, price: Number(pk.cost_b2c) })));
-        setB2bClients(clientsArr.map((c: any) => ({ id: c.id, label: c.institution_name })));
+        setB2bClients([{ id: null, label: '-' }, ...clientsArr.map((c: any) => ({ id: c.id, label: c.institution_name }))]);
+        
+        // If editing, load the sale data
+        if (saleId && saleRes) {
+          const sale = saleRes.data as any;
+          setForm({
+            date: sale.date || new Date().toISOString().split('T')[0],
+            branch_id: sale.branch_id || null,
+            branch_name: sale.branch_name || null,
+            client_type: sale.client_type || 'B2C',
+            b2b_client_id: sale.b2b_client_id || null,
+            b2b_client_name: sale.institution_name || null,
+            ref_by_doctor_id: sale.ref_by_doctor_id || null,
+            ref_by_doctor_name: sale.doctor_name || null,
+            patient_id: sale.patient_id || null,
+            patient_name: sale.patient_name || '',
+            tests: sale.items || [],
+            discount_mode: sale.discount_mode || 'amount',
+            discount_value: sale.discount_value || 0,
+            advance: sale.advance || 0,
+            next_checkup: sale.next_checkup || null,
+            google_review: sale.google_review || false,
+            status: sale.status || 'Pending',
+            payment_method: sale.payment_method || 'Cash',
+          });
+        }
       })
       .finally(() => setLoading(false));
-  }, [open]);
+  }, [open, saleId]);
 
-  // Reset/prefill form on open
+  // Reset form when opening for new sale (not editing)
   useEffect(() => {
-    if (!open) return;
+    if (!open || saleId) return;
     if (initialData) {
       setForm(prev => ({
         ...defaultForm,
