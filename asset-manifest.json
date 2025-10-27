@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/thyrosoft-web/static/css/main.3a7be6cc.css",
-    "main.js": "/thyrosoft-web/static/js/main.cf3da72e.js",
+    "main.js": "/thyrosoft-web/static/js/main.11e0bc4f.js",
     "static/js/453.99afac25.chunk.js": "/thyrosoft-web/static/js/453.99afac25.chunk.js",
     "index.html": "/thyrosoft-web/index.html",
     "main.3a7be6cc.css.map": "/thyrosoft-web/static/css/main.3a7be6cc.css.map",
-    "main.cf3da72e.js.map": "/thyrosoft-web/static/js/main.cf3da72e.js.map",
+    "main.11e0bc4f.js.map": "/thyrosoft-web/static/js/main.11e0bc4f.js.map",
     "453.99afac25.chunk.js.map": "/thyrosoft-web/static/js/453.99afac25.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.3a7be6cc.css",
-    "static/js/main.cf3da72e.js"
+    "static/js/main.11e0bc4f.js"
   ]
 }
