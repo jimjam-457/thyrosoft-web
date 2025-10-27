@@ -41,7 +41,7 @@ interface ReferralReport {
     b2b_amount: number;
   }[];
   total_amount: number;
-  payment_status: 'paid' | 'pending' | 'partial';
+  payment_status: 'paid' | 'pending';
   created_at: string;
 }
 
@@ -57,6 +57,7 @@ const Reports: React.FC = () => {
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE || 'http://localhost:3771/api';
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchReferralReports();
   }, []);
@@ -102,6 +103,27 @@ const Reports: React.FC = () => {
   const handlePrintReport = (report: ReferralReport) => {
     setSelectedReport(report);
     setPrintDialogOpen(true);
+  };
+
+  const handleUpdatePaymentStatus = async (report: ReferralReport) => {
+    if (report.payment_status === 'paid') return; // Don't update if already paid
+    
+    try {
+      const response = await axios.post<{ success: boolean; message: string; changes: number }>(`${API_BASE_URL}/reports/referrals/update-payment`, {
+        doctor_or_b2b_client: report.doctor_or_b2b_client,
+        payment_status: 'paid'
+      });
+      
+      if (response.data.success) {
+        // Update the local state
+        setReports(reports.map(r => 
+          r.id === report.id ? { ...r, payment_status: 'paid' as 'paid' | 'pending' } : r
+        ));
+        console.log('✅ Payment status updated to paid');
+      }
+    } catch (err: any) {
+      console.error('❌ Error updating payment status:', err);
+    }
   };
 
   const handlePrint = () => {
@@ -190,10 +212,17 @@ const Reports: React.FC = () => {
                             <Box sx={{ gridColumn: '1 / -1' }}>
                               <Typography variant="caption" color="textSecondary" display="block">Payment Status</Typography>
                               <Chip
-                                label={report.payment_status.toUpperCase()}
+                                label={report.payment_status === 'paid' ? 'PAID' : 'PENDING'}
                                 size="small"
-                                color={report.payment_status === 'paid' ? 'success' : report.payment_status === 'pending' ? 'warning' : 'default'}
+                                color={report.payment_status === 'paid' ? 'success' : 'warning'}
                                 icon={report.payment_status === 'paid' ? <PaidIcon /> : <PendingIcon />}
+                                onClick={() => handleUpdatePaymentStatus(report)}
+                                sx={{ 
+                                  cursor: report.payment_status === 'pending' ? 'pointer' : 'default',
+                                  '&:hover': report.payment_status === 'pending' ? {
+                                    opacity: 0.8
+                                  } : {}
+                                }}
                               />
                             </Box>
                           </Box>
@@ -272,10 +301,17 @@ const Reports: React.FC = () => {
                           </TableCell>
                           <TableCell sx={{ fontSize: '0.875rem', py: 2, border: 'none' }}>
                             <Chip
-                              label={report.payment_status.toUpperCase()}
+                              label={report.payment_status === 'paid' ? 'PAID' : 'PENDING'}
                               size="small"
-                              color={report.payment_status === 'paid' ? 'success' : report.payment_status === 'pending' ? 'warning' : 'default'}
+                              color={report.payment_status === 'paid' ? 'success' : 'warning'}
                               icon={report.payment_status === 'paid' ? <PaidIcon /> : <PendingIcon />}
+                              onClick={() => handleUpdatePaymentStatus(report)}
+                              sx={{ 
+                                cursor: report.payment_status === 'pending' ? 'pointer' : 'default',
+                                '&:hover': report.payment_status === 'pending' ? {
+                                  opacity: 0.8
+                                } : {}
+                              }}
                             />
                           </TableCell>
                           <TableCell sx={{ fontSize: '0.8rem', py: 1, border: 'none' }}>

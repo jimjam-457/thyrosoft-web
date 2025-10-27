@@ -95,9 +95,9 @@ app.get('/api/stats/summary', (req, res) => {
   const sql = `
     SELECT
       COUNT(*) AS sales_count,
-      IFNULL(SUM(COALESCE(CAST(discount_value AS REAL),0) + COALESCE(CAST(advance AS REAL),0) + COALESCE(CAST(balance_due AS REAL),0)), 0) AS amount_total,
+      IFNULL(SUM(COALESCE(CAST(total AS REAL),0)), 0) AS amount_total,
       IFNULL(SUM(COALESCE(CAST(balance_due AS REAL),0)), 0) AS amount_balance,
-      IFNULL(SUM(COALESCE(CAST(discount_value AS REAL),0) + COALESCE(CAST(advance AS REAL),0)), 0) AS amount_credited,
+      IFNULL(SUM(COALESCE(CAST(advance AS REAL),0)), 0) AS amount_credited,
       SUM(CASE WHEN ref_by_doctor_id IS NOT NULL AND ref_by_doctor_id <> '' THEN 1 ELSE 0 END) AS doctor_referrals_count,
       SUM(CASE WHEN client_type = 'B2B' THEN 1 ELSE 0 END) AS b2b_sales_count,
       SUM(CASE WHEN client_type = 'B2C' THEN 1 ELSE 0 END) AS b2c_sales_count,
@@ -1687,13 +1687,11 @@ app.get('/api/reports/referrals', (req, res) => {
                 referralMap[referrerName].total_referrals += 1;
                 referralMap[referrerName].total_amount += b2bAmount;
                 
-                // Update payment status
+                // Update payment status - only 'paid' or 'pending'
                 if (sale.payment_status && sale.payment_status.toLowerCase() !== 'paid') {
-                    if (referralMap[referrerName].payment_status === 'paid') {
-                        referralMap[referrerName].payment_status = 'partial';
-                    } else if (parseFloat(sale.balance) > 0) {
-                        referralMap[referrerName].payment_status = 'pending';
-                    }
+                    referralMap[referrerName].payment_status = 'pending';
+                } else if (parseFloat(sale.balance_due || 0) > 0) {
+                    referralMap[referrerName].payment_status = 'pending';
                 }
             });
             

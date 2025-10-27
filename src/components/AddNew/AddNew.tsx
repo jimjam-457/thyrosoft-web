@@ -9,7 +9,6 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
-  Divider,
   Paper,
   Table,
   TableBody,
@@ -66,28 +65,6 @@ import Reports from '../Reports/Reports';
 type AlertColor = 'success' | 'info' | 'warning' | 'error';
 
 const drawerWidth = 180;
-
-const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
-  open?: boolean;
-}>(({ theme, open }) => ({
-  flexGrow: 1,
-  padding: 0,
-  margin: 0,
-  border: 'none',
-  position: 'relative',
-  transition: theme.transitions.create('margin', {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  marginLeft: 0,
-  ...(open && {
-    transition: theme.transitions.create('margin', {
-      easing: theme.transitions.easing.easeOut,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-    marginLeft: drawerWidth,
-  }),
-}));
 
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   width: drawerWidth,
@@ -154,9 +131,9 @@ interface SalesRecord {
   ref_by_doctor?: string | null;
   patient_name?: string | null;
   patient_id?: string | null;
-  paid: number;
+  total?: number;
   advance: number;
-  balance: number;
+  balance_due?: number;
   status: 'Pending' | 'Done' | 'Cancelled' | string;
   date: string; // ISO date
 }
@@ -337,9 +314,9 @@ const AddNew: React.FC = () => {
       ref_by_doctor: record.ref_by_doctor_name || '—',
       patient_name: record.patient_name || '—',
       patient_id: record.patient_id ? String(record.patient_id) : '—',
-      paid: Number(record.discount_value || 0),
+      total: Number(record.total || 0),
       advance: Number(record.advance || 0),
-      balance: Number(record.balance_due || 0),
+      balance_due: Number(record.balance_due || 0),
       status: record.status,
       date: record.date,
     };
@@ -363,9 +340,9 @@ const AddNew: React.FC = () => {
       ref_by_doctor: record.ref_by_doctor_name || '—',
       patient_name: record.patient_name || '—',
       patient_id: record.patient_id ? String(record.patient_id) : '—',
-      paid: Number(record.discount_value || 0),
+      total: Number(record.total || 0),
       advance: Number(record.advance || 0),
-      balance: Number(record.balance_due || 0),
+      balance_due: Number(record.balance_due || 0),
       status: record.status,
       date: record.date,
     } : s));
@@ -404,9 +381,9 @@ const AddNew: React.FC = () => {
         ref_by_doctor: r.doctor_name || '—',
         patient_name: r.patient_name || '—',
         patient_id: r.patient_id ? String(r.patient_id) : '—',
-        paid: Number(r.discount_value || 0),
+        total: Number(r.total || 0),
         advance: Number(r.advance || 0),
-        balance: Number(r.balance_due || 0),
+        balance_due: Number(r.balance_due || 0),
         status: r.status,
         date: r.date,
       }));
@@ -578,6 +555,7 @@ const AddNew: React.FC = () => {
   };
 
   // Load data when component mounts and when selectedItem changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (selectedItem === 'doctors') {
       fetchDoctors();
@@ -594,21 +572,18 @@ const AddNew: React.FC = () => {
     } else if (selectedItem === 'b2b-clients') {
       fetchB2bClients();
     } else if (selectedItem === 'sales') {
-      fetchSales();
-    } else if (selectedItem === 'dashboard') {
-      fetchStats(statsPeriod, statsDate);
-    }
-    // Ensure Sales modal is closed when leaving Sales page
-    if (selectedItem !== 'sales' && isSalesFormOpen) {
-      setIsSalesFormOpen(false);
+      if (!isSalesFormOpen) {
+        fetchSales();
+      }
     }
   }, [selectedItem]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (selectedItem === 'dashboard') {
       fetchStats(statsPeriod, statsDate);
     }
-  }, [statsPeriod, statsDate]);
+  }, [statsPeriod, statsDate, selectedItem]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -2449,11 +2424,11 @@ const AddNew: React.FC = () => {
                                 </Box>
                                 <Box>
                                   <Typography variant="caption" color="textSecondary" display="block">Paid</Typography>
-                                  <Typography variant="body2" sx={{ fontWeight: 500, color: '#2e7d32' }}>₹{Number(sale.paid || 0).toFixed(2)}</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500, color: '#2e7d32' }}>₹{Number(sale.advance || 0).toFixed(2)}</Typography>
                                 </Box>
                                 <Box>
                                   <Typography variant="caption" color="textSecondary" display="block">Balance</Typography>
-                                  <Typography variant="body2" sx={{ fontWeight: 500, color: sale.balance > 0 ? '#d32f2f' : '#666' }}>₹{Number(sale.balance || 0).toFixed(2)}</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 500, color: (sale.balance_due || 0) > 0 ? '#d32f2f' : '#666' }}>₹{Number(sale.balance_due || 0).toFixed(2)}</Typography>
                                 </Box>
                                 <Box>
                                   <Typography variant="caption" color="textSecondary" display="block">Status</Typography>
@@ -2484,9 +2459,9 @@ const AddNew: React.FC = () => {
                       <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none' }}>Ref.By Dr</TableCell>
                       <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none' }}>Patient Name</TableCell>
                       <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none' }}>Patient ID</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none' }}>Total</TableCell>
                       <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none' }}>Paid</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none' }}>Advance</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none' }}>Balance</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none' }}>Balance Due</TableCell>
                       <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none' }}>Status</TableCell>
                       <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none' }}>Date</TableCell>
                       <TableCell sx={{ fontWeight: 600, color: '#333', py: 2, border: 'none', whiteSpace: 'nowrap' }}>Actions</TableCell>
@@ -2526,9 +2501,9 @@ const AddNew: React.FC = () => {
                             <TableCell sx={{ py: 2, border: 'none' }}>{sale.ref_by_doctor || '—'}</TableCell>
                             <TableCell sx={{ py: 2, border: 'none' }}>{sale.patient_name || '—'}</TableCell>
                             <TableCell sx={{ py: 2, border: 'none' }}>{sale.patient_id || '—'}</TableCell>
-                            <TableCell sx={{ py: 2, border: 'none' }}>{`₹${Number(sale.paid || 0).toFixed(2)}`}</TableCell>
-                            <TableCell sx={{ py: 2, border: 'none' }}>{`₹${Number(sale.advance || 0).toFixed(2)}`}</TableCell>
-                            <TableCell sx={{ py: 2, border: 'none' }}>{`₹${Number(sale.balance || 0).toFixed(2)}`}</TableCell>
+                            <TableCell sx={{ py: 2, border: 'none' }}>{`₹${Number(sale.total || 0).toFixed(2)}`}</TableCell>
+                            <TableCell sx={{ py: 2, border: 'none', color: '#2e7d32', fontWeight: 500 }}>{`₹${Number(sale.advance || 0).toFixed(2)}`}</TableCell>
+                            <TableCell sx={{ py: 2, border: 'none', color: (sale.balance_due || 0) > 0 ? '#d32f2f' : '#666', fontWeight: 500 }}>{`₹${Number(sale.balance_due || 0).toFixed(2)}`}</TableCell>
                             <TableCell sx={{ py: 2, border: 'none' }}>{sale.status}</TableCell>
                             <TableCell sx={{ py: 2, border: 'none' }}>{sale.date}</TableCell>
                             <TableCell sx={{ py: 1, border: 'none', whiteSpace: 'nowrap' }}>

@@ -238,7 +238,7 @@ const SalesForm: React.FC<SalesFormProps> = ({ open, onClose, onSave, inline, sa
               </RadioGroup>
             </Box>
             <TextField fullWidth label="By Amount" type="number" value={form.discount_value} onChange={(e) => setForm({ ...form, discount_value: Number(e.target.value || 0) })} InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }} />
-            <TextField fullWidth label="Advance" type="number" value={form.advance} onChange={(e) => setForm({ ...form, advance: Number(e.target.value || 0) })} InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }} />
+            <TextField fullWidth label="Paid" type="number" value={form.advance} onChange={(e) => setForm({ ...form, advance: Number(e.target.value || 0) })} InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }} />
             <TextField fullWidth label="Balance Due" value={balanceDue} InputProps={{ readOnly: true }} />
           </Box>
 
